@@ -3,7 +3,7 @@
 #include "polyglot_lib.h"
 
 #include <cstring>
-#include <filesystem>
+#include <experimental/filesystem>
 #include <iostream>
 
 #include "PGNGame.h"
@@ -18,13 +18,13 @@ size_t dedup_uniq_buffersize = 50000;
 float dedup_q_ratio = 1.0f;
 
 inline bool file_exists(const std::string &name) {
-  auto s = std::filesystem::status(name);
-  return std::filesystem::is_regular_file(s);
+  auto s = std::experimental::filesystem::status(name);
+  return std::experimental::filesystem::is_regular_file(s);
 }
 
 inline bool directory_exists(const std::string &name) {
-  auto s = std::filesystem::status(name);
-  return std::filesystem::is_directory(s);
+  auto s = std::experimental::filesystem::status(name);
+  return std::experimental::filesystem::is_directory(s);
 }
 
 void convert_games(const std::string &pgn_file_name, Options options) {
