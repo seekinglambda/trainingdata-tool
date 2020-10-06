@@ -11,7 +11,7 @@ TrainingDataWriter::TrainingDataWriter(size_t max_files_per_directory,
       dir_prefix(std::move(dir_prefix)){};
 
 void TrainingDataWriter::EnqueueChunks(
-    const std::vector<lczero::V4TrainingData> &chunks) {
+    const std::vector<lczero::V5TrainingData> &chunks) {
   for (auto &chunk : chunks) {
     chunks_queue.push(chunk);
   }
@@ -19,7 +19,7 @@ void TrainingDataWriter::EnqueueChunks(
 }
 
 void TrainingDataWriter::EnqueueChunks(
-    const std::unordered_map<lczero::V4TrainingData, size_t> &chunks) {
+    const std::unordered_map<lczero::V5TrainingData, size_t> &chunks) {
   for (auto chunk : chunks) {
     chunks_queue.push(chunk.first);
     WriteQueuedChunks(chunks_per_file);

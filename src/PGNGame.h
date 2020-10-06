@@ -18,10 +18,12 @@ struct Options {
 struct PGNGame {
   char result[PGN_STRING_SIZE];
   char fen[PGN_STRING_SIZE];
+  char white_elo[PGN_STRING_SIZE];
+  char black_elo[PGN_STRING_SIZE];
   std::vector<PGNMoveInfo> moves;
 
   explicit PGNGame(pgn_t* pgn);
-  std::vector<lczero::V4TrainingData> getChunks(Options options) const;
+  std::vector<lczero::V5TrainingData> getChunks(Options options) const;
 };
 
 #endif

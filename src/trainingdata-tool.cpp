@@ -34,7 +34,10 @@ void convert_games(const std::string &pgn_file_name, Options options) {
   TrainingDataWriter writer(max_files_per_directory, chunks_per_file);
   while (pgn_next_game(pgn) && game_id < max_games_to_convert) {
     PGNGame game(pgn);
-    writer.EnqueueChunks(game.getChunks(options));
+    int white_elo = atoi(game.white_elo);
+    int black_elo = atoi(game.black_elo);
+    if (black_elo < 1900 || white_elo < 1900 || black_elo>1950 || white_elo>1950) continue;
+        writer.EnqueueChunks(game.getChunks(options));
     game_id++;
     if (game_id % 1000 == 0) {
       std::cout << game_id << " games written." << std::endl;

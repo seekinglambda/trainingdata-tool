@@ -11,7 +11,7 @@ class TrainingDataReader {
 public:
   TrainingDataReader(const std::string &in_directory);
   virtual ~TrainingDataReader();
-  std::optional<lczero::V4TrainingData> ReadChunk();
+  std::optional<lczero::V5TrainingData> ReadChunk();
 
 private:
   gzFile getCurrentFile();

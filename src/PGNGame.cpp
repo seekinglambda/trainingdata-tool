@@ -12,6 +12,21 @@ float convert_sf_score_to_win_probability(float score) {
   return 2 / (1 + exp(-0.4 * score)) - 1;
 }
 
+bool extract_lichess_timing(const char* comment, int& T) {
+  std::string s(comment);
+  static std::regex rgx("\\[%clk (\\d+)\\:(\\d+)\\:(\\d+)\\]");
+  std::smatch matches;
+  int time = 0;
+  if (std::regex_search(s, matches, rgx)) {
+    time += 3600 * std::stoi(matches[1]);
+    time += 60 * std::stoi(matches[2]);
+    time += std::stoi(matches[3]);
+    T = time;
+    return true;
+  }
+  return false;
+}
+
 bool extract_lichess_comment_score(const char* comment, float& Q) {
   std::string s(comment);
   static std::regex rgx("\\[%eval (-?\\d+(\\.\\d+)?)\\]");
@@ -45,9 +60,8 @@ lczero::Move poly_move_to_lc0_move(move_t move, board_t* board) {
   } else if (move_is_castle(move, board)) {
     bool is_short_castle =
         square_file(move_from(move)) < square_file(move_to(move));
-    int file_to = is_short_castle ? 6 : 2;
+    int file_to = is_short_castle ? 7 : 0;
     m.SetTo(lczero::BoardSquare(square_rank(move_to(move)), file_to));
-    m.SetCastling();
   }
 
   if (colour_is_black(board->turn)) {
@@ -60,6 +74,8 @@ lczero::Move poly_move_to_lc0_move(move_t move, board_t* board) {
 PGNGame::PGNGame(pgn_t* pgn) {
   strncpy(this->result, pgn->result, PGN_STRING_SIZE);
   strncpy(this->fen, pgn->fen, PGN_STRING_SIZE);
+  strncpy(this->white_elo, pgn->whiteelo, PGN_STRING_SIZE);
+  strncpy(this->black_elo, pgn->blackelo, PGN_STRING_SIZE);
 
   char str[256];
   while (pgn_next_move(pgn, str, 256)) {
@@ -67,8 +83,8 @@ PGNGame::PGNGame(pgn_t* pgn) {
   }
 }
 
-std::vector<lczero::V4TrainingData> PGNGame::getChunks(Options options) const {
-  std::vector<lczero::V4TrainingData> chunks;
+std::vector<lczero::V5TrainingData> PGNGame::getChunks(Options options) const {
+  std::vector<lczero::V5TrainingData> chunks;
   lczero::ChessBoard starting_board;
   std::string starting_fen =
       std::strlen(this->fen) > 0 ? this->fen : lczero::ChessBoard::kStartposFen;
@@ -110,6 +126,10 @@ std::vector<lczero::V4TrainingData> PGNGame::getChunks(Options options) const {
   }
 
   char str[256];
+  bool player_one = true;
+  int player_one_clock = -1;
+  int player_two_clock = -1;
+  std::cout << "Reset" << std::endl;
   for (auto pgn_move : this->moves) {
     // Extract move from pgn
     int move = move_from_san(pgn_move.move, board);
@@ -143,7 +163,7 @@ std::vector<lczero::V4TrainingData> PGNGame::getChunks(Options options) const {
     bool found = false;
     auto legal_moves = position_history.Last().GetBoard().GenerateLegalMoves();
     for (auto legal : legal_moves) {
-      if (legal == lc0_move && legal.castling() == lc0_move.castling()) {
+      if (legal == lc0_move) {
         found = true;
         break;
       }
@@ -155,6 +175,30 @@ std::vector<lczero::V4TrainingData> PGNGame::getChunks(Options options) const {
 
     // Extract SF scores and convert to win probability
     float Q = 0.0f;
+    float M = 0.0f;
+    if (pgn_move.comment[0]) {
+      int T = 0;
+      bool success = extract_lichess_timing(pgn_move.comment, T);
+      if (!success) {
+        std::cout << "Error extracting timing" << std::endl;
+        break;
+      }
+      if (player_one && player_one_clock < 0) player_one_clock = T;
+      if (!player_one && player_two_clock < 0) player_two_clock = T;
+
+      if (player_one) {
+        M = (float) (player_one_clock - T);
+        player_one_clock = T;
+      } else {
+        M = (float) (player_two_clock - T);
+        player_two_clock = T;
+      }
+    //  std::string str(pgn_move.comment);
+    //  std::cout << str << std::endl;
+    }
+    player_one = !player_one;
+  //  std::cout << std::to_string(M) << std::endl;
+
     if (options.lichess_mode) {
       if (pgn_move.comment[0]) {
         float lichess_score;
@@ -169,11 +213,10 @@ std::vector<lczero::V4TrainingData> PGNGame::getChunks(Options options) const {
         break;
       }
     }
-
     if (!(bad_move && options.lichess_mode)) {
       // Generate training data
-      lczero::V4TrainingData chunk = get_v4_training_data(
-          game_result, position_history, lc0_move, legal_moves, Q);
+      lczero::V5TrainingData chunk = get_v5_training_data(
+          game_result, position_history, lc0_move, legal_moves, Q, M);
       chunks.push_back(chunk);
       if (options.verbose) {
         std::string result;

@@ -1,6 +1,6 @@
 #include "TrainingDataDedup.h"
 
-#include "V4TrainingDataHashUtil.h"
+#include "V5TrainingDataHashUtil.h"
 
 #include <iostream>
 #include <unordered_map>
@@ -9,8 +9,8 @@ float merge_val(float old_val, size_t old_count, float new_val) {
   return (old_val * old_count + new_val) / static_cast<float>(old_count + 1);
 }
 
-void merge_chunks(lczero::V4TrainingData& chunk, size_t old_count,
-                  const lczero::V4TrainingData& new_chunk) {
+void merge_chunks(lczero::V5TrainingData& chunk, size_t old_count,
+                  const lczero::V5TrainingData& new_chunk) {
   for (size_t i = 0; i < ARR_LENGTH(chunk.probabilities); ++i) {
     chunk.probabilities[i] = merge_val(chunk.probabilities[i], old_count,
                                        new_chunk.probabilities[i]);
@@ -23,7 +23,7 @@ void merge_chunks(lczero::V4TrainingData& chunk, size_t old_count,
 }
 
 void flush(TrainingDataWriter& writer,
-           std::unordered_map<lczero::V4TrainingData, size_t>& chunk_map,
+           std::unordered_map<lczero::V5TrainingData, size_t>& chunk_map,
            size_t& unique_count, size_t& total_count) {
   std::cout << "Start writing chunks..." << std::endl;
   writer.EnqueueChunks(chunk_map);
@@ -44,7 +44,7 @@ void training_data_dedup(TrainingDataReader& reader, TrainingDataWriter& writer,
                          const float q_ratio) {
   size_t unique_count = 0;
   size_t total_count = 0;
-  std::unordered_map<lczero::V4TrainingData, size_t> chunk_map;
+  std::unordered_map<lczero::V5TrainingData, size_t> chunk_map;
 
   while (auto new_chunk = reader.ReadChunk()) {
     total_count++;
@@ -59,7 +59,7 @@ void training_data_dedup(TrainingDataReader& reader, TrainingDataWriter& writer,
       chunk_map.emplace(*new_chunk, 1);
       unique_count++;
     } else {
-      lczero::V4TrainingData merged = elem->first;
+      lczero::V5TrainingData merged = elem->first;
       size_t old_count = elem->second;
       merge_chunks(merged, elem->second, *new_chunk);
       chunk_map.erase(elem);

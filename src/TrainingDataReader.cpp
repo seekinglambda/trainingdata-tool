@@ -19,9 +19,9 @@ TrainingDataReader::~TrainingDataReader() {
   }
 }
 
-std::optional<lczero::V4TrainingData> TrainingDataReader::ReadChunk() {
-  const size_t length = sizeof(lczero::V4TrainingData);
-  lczero::V4TrainingData buffer{};
+std::optional<lczero::V5TrainingData> TrainingDataReader::ReadChunk() {
+  const size_t length = sizeof(lczero::V5TrainingData);
+  lczero::V5TrainingData buffer{};
   int bytes_read;
   do {
     gzFile currentFile = getCurrentFile();
@@ -30,7 +30,7 @@ std::optional<lczero::V4TrainingData> TrainingDataReader::ReadChunk() {
     }
     bytes_read = gzread(currentFile, &buffer, length);
   } while (length != bytes_read);
-  return std::optional<lczero::V4TrainingData>{buffer};
+  return std::optional<lczero::V5TrainingData>{buffer};
 }
 gzFile TrainingDataReader::getCurrentFile() {
   if (nullptr != file && gzeof(file)) {

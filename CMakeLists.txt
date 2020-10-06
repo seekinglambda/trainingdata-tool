@@ -17,13 +17,10 @@ set (
     "lc0/src/utils/commandline.cc"
     "lc0/src/utils/logging.cc"
     "lc0/src/utils/random.cc"
+    "lc0/src/utils/string.cc"
 )
 
-if (WIN32)
-    set (lc0_filesystem "lc0/src/utils/filesystem.win32.cc")
-else (WIN32)
-    set (lc0_filesystem "lc0/src/utils/filesystem.posix.cc")
-endif (WIN32)
+set (lc0_filesystem "lc0/src/utils/filesystem.posix.cc")
 
 AUX_SOURCE_DIRECTORY(polyglot/src polyglot)
 AUX_SOURCE_DIRECTORY(zlib zlib)
@@ -37,9 +34,8 @@ set_target_properties(trainingdata-tool PROPERTIES
     CXX_EXTENSIONS ON
 )
 
-if (UNIX)
-    target_link_libraries(trainingdata-tool -lpthread -lstdc++fs)
-endif(UNIX)
+
+target_link_libraries(trainingdata-tool -lpthread -lstdc++fs)
 
 find_package(Boost 1.65.0)
 
