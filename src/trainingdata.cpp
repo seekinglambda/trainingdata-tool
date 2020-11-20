@@ -11,11 +11,12 @@ uint64_t resever_bits_in_bytes(uint64_t v) {
 
 lczero::V5TrainingData get_v5_training_data(
         lczero::GameResult game_result, const lczero::PositionHistory& history,
-        lczero::Move played_move, lczero::MoveList legal_moves, float Q, float M) {
+        lczero::Move played_move, lczero::MoveList legal_moves, float Q, float plies_left) {
   lczero::V5TrainingData result;
 
   // Set version.
   result.version = 5;
+  result.input_format = pblczero::NetworkFormat::INPUT_CLASSICAL_112_PLANE;
 
   // Illegal moves will have "-1" probability
   for (auto& probability : result.probabilities) {
@@ -71,6 +72,6 @@ lczero::V5TrainingData get_v5_training_data(
   // We have no D information
   result.root_d = result.best_d = 0.0f;
 
-  result.root_m = result.best_m = M;
+  result.plies_left = plies_left;
   return result;
 }

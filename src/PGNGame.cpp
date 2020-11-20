@@ -129,7 +129,6 @@ std::vector<lczero::V5TrainingData> PGNGame::getChunks(Options options) const {
   bool player_one = true;
   int player_one_clock = -1;
   int player_two_clock = -1;
-  std::cout << "Reset" << std::endl;
   for (auto pgn_move : this->moves) {
     // Extract move from pgn
     int move = move_from_san(pgn_move.move, board);
@@ -175,7 +174,7 @@ std::vector<lczero::V5TrainingData> PGNGame::getChunks(Options options) const {
 
     // Extract SF scores and convert to win probability
     float Q = 0.0f;
-    float M = 0.0f;
+    float time_used = 0.0f;
     if (pgn_move.comment[0]) {
       int T = 0;
       bool success = extract_lichess_timing(pgn_move.comment, T);
@@ -187,17 +186,14 @@ std::vector<lczero::V5TrainingData> PGNGame::getChunks(Options options) const {
       if (!player_one && player_two_clock < 0) player_two_clock = T;
 
       if (player_one) {
-        M = (float) (player_one_clock - T);
+        time_used = std::max(0.0f, (float)(player_one_clock - T));
         player_one_clock = T;
       } else {
-        M = (float) (player_two_clock - T);
+        time_used = std::max(0.0f, (float)(player_two_clock - T));
         player_two_clock = T;
       }
-    //  std::string str(pgn_move.comment);
-    //  std::cout << str << std::endl;
     }
     player_one = !player_one;
-  //  std::cout << std::to_string(M) << std::endl;
 
     if (options.lichess_mode) {
       if (pgn_move.comment[0]) {
@@ -216,7 +212,7 @@ std::vector<lczero::V5TrainingData> PGNGame::getChunks(Options options) const {
     if (!(bad_move && options.lichess_mode)) {
       // Generate training data
       lczero::V5TrainingData chunk = get_v5_training_data(
-          game_result, position_history, lc0_move, legal_moves, Q, M);
+          game_result, position_history, lc0_move, legal_moves, Q, time_used);
       chunks.push_back(chunk);
       if (options.verbose) {
         std::string result;

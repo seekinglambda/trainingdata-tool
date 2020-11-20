@@ -1,6 +1,7 @@
 #include "TrainingDataWriter.h"
 
 #include <utility>
+#include <iostream>
 
 TrainingDataWriter::TrainingDataWriter(size_t max_files_per_directory,
                                        size_t chunks_per_file,
