@@ -27,7 +27,7 @@ inline bool directory_exists(const std::string &name) {
   return std::experimental::filesystem::is_directory(s);
 }
 
-void convert_games(const std::string &pgn_file_name, Options options) {
+void convert_games(const std::string &pgn_file_name, Options options, int min_rating, int max_rating) {
   int game_id = 0;
   pgn_t pgn[1];
   pgn_open(pgn, pgn_file_name.c_str());
@@ -36,7 +36,7 @@ void convert_games(const std::string &pgn_file_name, Options options) {
     PGNGame game(pgn);
     int white_elo = atoi(game.white_elo);
     int black_elo = atoi(game.black_elo);
-    if (black_elo < 1600 || white_elo < 1600 || black_elo>1800 || white_elo>1800) continue;
+    if (black_elo < min_rating || white_elo < min_rating || black_elo>max_rating || white_elo>max_rating) continue;
     writer.EnqueueChunks(game.getChunks(options));
     game_id++;
     if (game_id % 1000 == 0) {
@@ -53,6 +53,8 @@ int main(int argc, char *argv[]) {
   polyglot_init();
   Options options;
   bool deduplication_mode = false;
+  int max_rating = 4000;
+  int min_rating = 0;
   for (size_t idx = 0; idx < argc; ++idx) {
     if (0 == static_cast<std::string>("-v").compare(argv[idx])) {
       std::cout << "Verbose mode ON" << std::endl;
@@ -89,6 +91,16 @@ int main(int argc, char *argv[]) {
       dedup_q_ratio = std::stof(argv[idx + 1]);
       std::cout << "Deduplication Q ratio set to: " << dedup_q_ratio
                 << std::endl;
+    } else if (0 ==
+               static_cast<std::string>("-max-rating").compare(argv[idx])) {
+      max_rating = std::atoi(argv[idx + 1]);
+      std::cout << "Max rating set to: " << max_rating
+                << std::endl;
+    } else if (0 ==
+               static_cast<std::string>("-min-rating").compare(argv[idx])) {
+      min_rating = std::atoi(argv[idx + 1]);
+      std::cout << "Min rating set to: " << min_rating
+                << std::endl;
     }
   }
 
@@ -103,7 +115,7 @@ int main(int argc, char *argv[]) {
       if (options.verbose) {
         std::cout << "Opening \'" << argv[idx] << "\'" << std::endl;
       }
-      convert_games(argv[idx], options);
+      convert_games(argv[idx], options, min_rating, max_rating);
     }
   }
 }
